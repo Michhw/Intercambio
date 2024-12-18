@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intercambio de Regalos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            margin: 50px auto;
+            padding: 20px;
+            max-width: 400px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .admin-log {
+            margin-top: 20px;
+            text-align: left;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 0.9em;
+        }
+        .admin-login {
+            margin-top: 50px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Intercambio Familiar</h1>
+        <p>Ingresa tu nombre para participar en el sorteo:</p>
+        <form id="giftForm">
+            <input type="text" id="nameInput" placeholder="Tu nombre" required />
+            <button type="submit">Sortea</button>
+        </form>
+        <p id="result" style="font-weight: bold; color: #333;"></p>
+    </div>
+
+    <div class="admin-login" id="adminLogin">
+        <h3>Acceso para Administradores</h3>
+        <form id="loginForm">
+            <input type="password" id="adminPassword" placeholder="Contraseña" required />
+            <button type="submit">Acceder</button>
+        </form>
+    </div>
+
+    <div class="admin-log" id="adminLog" hidden>
+        <h3>Registro del Sorteo</h3>
+        <ul id="logList"></ul>
+    </div>
+
+    <script>
+        const participants = ['Ino', 'Yami', 'Andy', 'Jared', 'Alejandro', 'Bibi', 'Kass', 'Irvin', 'Dasha', 'Alejandra', 'Axel', 'Danny']; // Lista de participantes
+        const adminLog = document.getElementById('adminLog');
+        const logList = document.getElementById('logList');
+        const assignments = {}; // Objeto para rastrear asignaciones
+        const adminLogin = document.getElementById('adminLogin');
+        const loginForm = document.getElementById('loginForm');
+
+        // Contraseña de administrador
+        const adminPassword = "SorteoFamBas";
+
+        // Grupos de participantes que no pueden regalarse entre ellos
+        const groups = [
+            ['Ino', 'Yami', 'Andy'],
+            ['Jared', 'Alejandro', 'Bibi', 'Kass', 'Irvin', 'Dasha'],
+            ['Alejandra', 'Axel', 'Danny']
+        ];
+
+        // Manejo del inicio de sesión del administrador
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const inputPassword = document.getElementById('adminPassword').value;
+
+            if (inputPassword === adminPassword) {
+                adminLogin.hidden = true;
+                adminLog.hidden = false;
+                loadSavedLog(); // Cargar log guardado
+            } else {
+                alert('Contraseña incorrecta');
+            }
+        });
+
+        document.getElementById('giftForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Evita el envío del formulario
+
+            const name = document.getElementById('nameInput').value.trim();
+
+            if (!name) {
+                alert('Por favor, ingresa tu nombre.');
+                return;
+            }
+
+            // Agrega el nombre del participante a la lista si no está ya incluido
+            if (!participants.includes(name)) {
+                participants.push(name);
+            }
+
+            // Determina el grupo del participante, si existe
+            const group = groups.find(group => group.includes(name));
+
+            // Realiza el sorteo de manera aleatoria
+            let selected;
+            do {
+                const randomIndex = Math.floor(Math.random() * participants.length);
+                selected = participants[randomIndex];
+            } while (selected === name || (group && group.includes(selected)));
+
+            // Mostrar el resultado al usuario
+            document.getElementById('result').textContent = `¡Felicidades, ${name}! Te tocó regalar a ${selected}.`;
+
+            // Registrar el resultado para el administrador
+            assignments[name] = selected;
+            updateAdminLog(name, selected);
+            saveLog(); // Guardar log actualizado
+        });
+
+        function updateAdminLog(giver, receiver) {
+            const logItem = document.createElement('li');
+            logItem.textContent = `${giver} -> ${receiver}`;
+            logList.appendChild(logItem);
+        }
+
+        function saveLog() {
+            localStorage.setItem('giftExchangeLog', JSON.stringify(assignments));
+        }
+
+        function loadSavedLog() {
+            const savedLog = JSON.parse(localStorage.getItem('giftExchangeLog'));
+            if (savedLog) {
+                for (const [giver, receiver] of Object.entries(savedLog)) {
+                    updateAdminLog(giver, receiver);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
